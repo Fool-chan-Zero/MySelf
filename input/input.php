@@ -24,34 +24,40 @@
 ini_set( 'display_errors', 1 );
 
 if($_SERVER['REQUEST_METHOD']=='POST'){
-
-  $link = mysql_connect('localhost','root','kuroro');
-  if(!$link){die('connection failed '.mysql_error());}
+ // 環境によってMySQLのパスが違うので注意
+ // $link = mysql_connect('localhost','root','kuroro');
+ // if(!$link){die('connection failed '.mysql_error());}
   try {
-    $pdo = new PDO('mysql:host=localhost:/tmp/mysql.sock;dbname=myself;charset=utf8','root','kuroro',
-      array(PDO::ATTR_EMULATE_PREPARES => false)
-    );
+    //POD(SQLサービス:接続DB名;接続アドレス;エンコ;ユーザ名;pass);
+    $pdo = new PDO('mysql:dbname=myself;host=localhost;charset=utf8','root','fuyuki');
   } catch (PDOException $e) {
       print('Connection failed:'.$e->getMessage());
     die();
   }
 
-  //SQL文発行，メソッドを用意するならこれを分割か
+  //SQL文発行，メソッドを用意するならこれを分割
   //$sql = "INSERT INTO profile (name,furigana,bd,native,address) VALUE(?,?,?,?,?)";
+  $sql = "INSERT INTO hobby (id,hobbydata) values (:id,:hobbydata);";
 
-  $sql = "INSERT INTO 'hobby' ('hobbydata')values (:hobbydata);";
-
-  //コネクションとSQL文を基にしてクエリの準備
-  $sth = $pdo -> prepare($sql);
+  //コネクションとSQL文を基にしてクエリの準備(ステートメントの作成)
+  $stm = $pdo -> prepare($sql);
+    //
+    if(!$stm){
+        $info = $pdo -> errorInfo();
+        exit($info[2]);
+    }
 
   var_dump($_POST);
+    print('------------------ ');
   print($_POST['hobbydata']);
 
   //executeでクエリの実行，正否は真偽が返る
   //$flg = $sql->execute(array($_POST['name'],$_POST['furigana'],$_POST['bd'],$_POST['native'],$_POST['address']));
-  $sth ->bindValue(':hobbydata',$_POST['hobbydata'],PDO::PARAM_STR);
-
-  $flg =  $sql  ->execute();
+  //bindValue('プレースホルダ','オブジェクト',バインドする型(str省略可));
+//  $stm ->bindValue(':hobbydata',$_POST['hobbydata'],PDO::PARAM_STR);
+    $stm -> bindValue(':id',rand(1,10));
+    $stm -> bindValue(':hobbydata',$_POST['hobbydata']);
+  $flg =  $stm  ->execute();
 
   if($flg){
     print('レコードを追加');
